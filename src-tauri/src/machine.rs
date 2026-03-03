@@ -2,7 +2,7 @@ use anyhow::{anyhow, Result};
 use uuid::Uuid;
 use std::fs;
 use std::path::PathBuf;
-#[cfg(any(target_os = "windows", target_os = "macos"))]
+#[cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))]
 use std::process::Command;
 
 #[cfg(target_os = "windows")]
@@ -73,9 +73,18 @@ fn get_trae_data_path() -> Result<PathBuf> {
         .join("Trae"))
 }
 
-#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+#[cfg(target_os = "linux")]
 fn get_trae_data_path() -> Result<PathBuf> {
-    Err(anyhow!("This feature is only supported on Windows and macOS"))
+    let home = std::env::var("HOME")
+        .map_err(|_| anyhow!("Failed to get HOME environment variable"))?;
+    Ok(PathBuf::from(home)
+        .join(".config")
+        .join("Trae"))
+}
+
+#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+fn get_trae_data_path() -> Result<PathBuf> {
+    Err(anyhow!("This feature is only supported on Windows, macOS and Linux"))
 }
 
 /// Retrieves the machine ID from the Trae IDE.
@@ -130,8 +139,20 @@ pub fn is_trae_running() -> bool {
         .unwrap_or(false)
 }
 
-/// Terminates the Trae IDE process.
-#[cfg(target_os = "windows")]
+#[cfg(target_os = "linux")]
+pub fn is_trae_running() -> bool {
+    // Use pgrep to match Trae process
+    Command::new("pgrep")
+        .args(["-f", "trae"])
+        .output()
+        .map(|out| out.status.success())
+        .unwrap_or(false)
+}
+
+#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+pub fn is_trae_running() -> bool {
+    false
+}
 pub fn kill_trae() -> Result<()> {
     if !is_trae_running() {
         log::info!("Trae IDE is not running");
@@ -206,14 +227,50 @@ pub fn kill_trae() -> Result<()> {
     Ok(())
 }
 
-#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+#[cfg(target_os = "linux")]
+pub fn kill_trae() -> Result<()> {
+    if !is_trae_running() {
+        log::info!("Trae IDE is not running");
+        return Ok(());
+    }
+
+    log::info!("Closing Trae IDE...");
+
+    // Try graceful shutdown first (SIGTERM)
+    let _ = Command::new("pkill")
+        .args(["-f", "trae"])
+        .output();
+
+    // Wait a moment
+    std::thread::sleep(std::time::Duration::from_millis(1500));
+
+    // Force kill if still running (SIGKILL)
+    if is_trae_running() {
+        log::info!("Graceful shutdown failed, force closing...");
+        let _ = Command::new("pkill")
+            .args(["-9", "-f", "trae"])
+            .output();
+        
+        // Wait a moment
+        std::thread::sleep(std::time::Duration::from_millis(1000));
+    }
+
+    if is_trae_running() {
+        return Err(anyhow!("Failed to close Trae IDE, please close it manually and try again"));
+    }
+
+    log::info!("Trae IDE closed");
+    Ok(())
+}
+
+#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
 pub fn is_trae_running() -> bool {
     false
 }
 
-#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
 pub fn kill_trae() -> Result<()> {
-    Err(anyhow!("This feature is only supported on Windows and macOS"))
+    Err(anyhow!("This feature is only supported on Windows, macOS and Linux"))
 }
 
 /// Retrieves the Trae IDE configuration file path.
@@ -270,9 +327,21 @@ pub fn save_trae_path(path: &str) -> Result<()> {
     Ok(())
 }
 
-#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+#[cfg(target_os = "linux")]
+pub fn save_trae_path(path: &str) -> Result<()> {
+    let exe_path = PathBuf::from(path);
+    if !exe_path.exists() {
+        return Err(anyhow!("The specified path does not exist"));
+    }
+    let config_path = get_trae_config_path()?;
+    fs::write(&config_path, path)?;
+    log::info!("Saved Trae IDE path: {}", path);
+    Ok(())
+}
+
+#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
 pub fn save_trae_path(_path: &str) -> Result<()> {
-    Err(anyhow!("This feature is only supported on Windows and macOS"))
+    Err(anyhow!("This feature is only supported on Windows, macOS and Linux"))
 }
 
 /// Automatically scans for the Trae IDE installation path.
@@ -315,9 +384,29 @@ pub fn scan_trae_path() -> Result<String> {
     Err(anyhow!("Trae IDE not found, please configure the path manually"))
 }
 
-#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+#[cfg(target_os = "linux")]
 pub fn scan_trae_path() -> Result<String> {
-    Err(anyhow!("This feature is only supported on Windows and macOS"))
+    // Common Linux application installation locations
+    let possible_paths = [
+        "/usr/bin/trae",
+        "/usr/local/bin/trae",
+        "/opt/Trae/trae",
+        &format!("{}/.local/bin/trae", std::env::var("HOME").unwrap_or_default()),
+        &format!("{}/bin/trae", std::env::var("HOME").unwrap_or_default()),
+    ];
+    
+    for path in possible_paths {
+        if PathBuf::from(path).exists() {
+            return Ok(path.to_string());
+        }
+    }
+    
+    Err(anyhow!("Trae IDE not found, please configure the path manually"))
+}
+
+#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+pub fn scan_trae_path() -> Result<String> {
+    Err(anyhow!("This feature is only supported on Windows, macOS and Linux"))
 }
 
 /// Opens the Trae IDE.
@@ -381,9 +470,40 @@ pub fn open_trae() -> Result<()> {
     Ok(())
 }
 
-#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+#[cfg(target_os = "linux")]
 pub fn open_trae() -> Result<()> {
-    Err(anyhow!("This feature is only supported on Windows and macOS"))
+    let trae_exe = match get_saved_trae_path() {
+        Ok(path) => PathBuf::from(path),
+        Err(_) => {
+            // Try auto-scan
+            match scan_trae_path() {
+                Ok(path) => {
+                    // Auto-save the scanned path
+                    let _ = save_trae_path(&path);
+                    PathBuf::from(path)
+                },
+                Err(_) => return Err(anyhow!("Trae IDE path not configured, please set it in settings")),
+            }
+        }
+    };
+
+    if !trae_exe.exists() {
+        return Err(anyhow!("Trae IDE path is invalid, please reconfigure it in settings"));
+    }
+
+    println!("[INFO] Starting Trae IDE: {}", trae_exe.display());
+
+    Command::new(&trae_exe)
+        .spawn()
+        .map_err(|e| anyhow!("Failed to start Trae IDE: {}", e))?;
+
+    log::info!("Trae IDE started");
+    Ok(())
+}
+
+#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+pub fn open_trae() -> Result<()> {
+    Err(anyhow!("This feature is only supported on Windows, macOS and Linux"))
 }
 
 /// Account login information structure for writing to Trae IDE.
@@ -737,7 +857,6 @@ fn md5_hash(input: &str) -> u128 {
     ((h1 as u128) << 64) | (h2 as u128)
 }
 
-// macOS platform implementation
 #[cfg(target_os = "macos")]
 pub fn get_machine_guid() -> Result<String> {
     // Use ioreg command to read IOPlatformUUID
@@ -773,18 +892,57 @@ pub fn reset_machine_guid() -> Result<String> {
     Err(anyhow!("macOS does not support resetting system machine ID"))
 }
 
-// Placeholder implementations for non-Windows/macOS platforms
-#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+// Linux platform implementation
+#[cfg(target_os = "linux")]
 pub fn get_machine_guid() -> Result<String> {
-    Err(anyhow!("This feature is only supported on Windows and macOS"))
+    // Try to read /etc/machine-id first (systemd)
+    if let Ok(content) = fs::read_to_string("/etc/machine-id") {
+        return Ok(content.trim().to_string());
+    }
+    
+    // Fallback to /var/lib/dbus/machine-id
+    if let Ok(content) = fs::read_to_string("/var/lib/dbus/machine-id") {
+        return Ok(content.trim().to_string());
+    }
+    
+    Err(anyhow!("Failed to read machine ID from /etc/machine-id or /var/lib/dbus/machine-id"))
 }
 
-#[cfg(not(any(target_os = "windows", target_os = "macos")))]
-pub fn set_machine_guid(_new_guid: &str) -> Result<()> {
-    Err(anyhow!("This feature is only supported on Windows and macOS"))
+#[cfg(target_os = "linux")]
+pub fn set_machine_guid(new_guid: &str) -> Result<()> {
+    // Try to write to /etc/machine-id (requires root)
+    fs::write("/etc/machine-id", format!("{}\n", new_guid))
+        .map_err(|e| anyhow!("Failed to write /etc/machine-id (requires root privileges): {}", e))?;
+    
+    // Also update /var/lib/dbus/machine-id if it exists
+    if PathBuf::from("/var/lib/dbus/machine-id").exists() {
+        let _ = fs::write("/var/lib/dbus/machine-id", format!("{}\n", new_guid));
+    }
+    
+    Ok(())
 }
 
-#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+#[cfg(target_os = "linux")]
 pub fn reset_machine_guid() -> Result<String> {
-    Err(anyhow!("This feature is only supported on Windows and macOS"))
+    let new_guid = generate_machine_guid();
+    // Remove hyphens for Linux machine-id format
+    let new_guid = new_guid.replace("-", "");
+    set_machine_guid(&new_guid)?;
+    Ok(new_guid)
+}
+
+// Placeholder implementations for non-Windows/macOS/Linux platforms
+#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+pub fn get_machine_guid() -> Result<String> {
+    Err(anyhow!("This feature is only supported on Windows, macOS and Linux"))
+}
+
+#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+pub fn set_machine_guid(_new_guid: &str) -> Result<()> {
+    Err(anyhow!("This feature is only supported on Windows, macOS and Linux"))
+}
+
+#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+pub fn reset_machine_guid() -> Result<String> {
+    Err(anyhow!("This feature is only supported on Windows, macOS and Linux"))
 }
