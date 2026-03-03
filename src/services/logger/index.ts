@@ -4,6 +4,13 @@
  * This file exports the singleton logger instance and factory function
  * for creating module-specific logger instances.
  * 
+ * Configuration:
+ * - Environment variables (VITE_LOG_LEVEL, VITE_LOG_FILE_ENABLED, etc.) are embedded at build time
+ * - If no environment variables are set, defaults are used:
+ *   - Log Level: 'info' (production) / 'debug' (development)
+ *   - File Logging: Disabled
+ *   - Pretty Print: Enabled in development only
+ * 
  * Validates: Requirements 1.4, 4.1
  */
 

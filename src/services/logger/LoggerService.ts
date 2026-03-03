@@ -4,7 +4,16 @@
  * Core logger service that manages pino logger instances and provides
  * unified logging interface for the application.
  * 
- * Validates: Requirements 1.1, 1.2, 1.3, 6.1, 6.3
+ * Configuration Priority:
+ * 1. Explicit config passed to constructor
+ * 2. Environment variables (VITE_LOG_LEVEL, etc.) - embedded at build time
+ * 3. Hardcoded defaults:
+ *    - Log Level: 'info' (production) / 'debug' (development)
+ *    - File Logging: Disabled
+ *    - Pretty Print: Enabled in development only
+ * 
+ * Note: Built applications do not read .env files at runtime. All environment
+ * variables are embedded during the build process by Vite.
  */
 
 import pino, { Logger as PinoLogger, LoggerOptions } from 'pino';
@@ -131,7 +140,8 @@ export class LoggerService implements ILoggerService {
       // Ignore errors reading environment
     }
     
-    // Default based on environment
+    // Default: production apps use 'info', development uses 'debug'
+    // These defaults are used when no environment variables are set
     return this.config.environment === 'development' ? 'debug' : 'info';
   }
 

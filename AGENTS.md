@@ -110,33 +110,55 @@ chore(deps): update tauri to version 2.1.0
 
 ## Environment Configuration
 
-### Default Environment (.env)
+### How Environment Variables Work
 
-The default `.env` file uses **production** configuration:
+Vite embeds environment variables at **build time**. Variables prefixed with `VITE_` are accessible via `import.meta.env` in the application code.
+
+- **Development**: Vite loads `.env.development` automatically when running `npm run tauri dev`
+- **Production**: Vite loads `.env.production` automatically when running `npm run tauri build`
+- **Runtime**: The built app uses values embedded during build - no `.env` files are included in the final package
+
+### Default Configuration (Hardcoded in App)
+
+When environment variables are not set, the app uses these defaults:
+
+- **Log Level**: `info` (production) / `debug` (development)
+- **File Logging**: Disabled by default
+- **Pretty Print**: Enabled in development, disabled in production
+
+These defaults are defined in `src/services/logger/LoggerService.ts` and will be used if no `.env` files are present during build.
+
+### Production Environment (.env.production)
+
+Optional configuration for production builds:
 
 ```ini
-NODE_ENV=production
-LOG_LEVEL=info
-LOG_FILE_ENABLED=true
-LOG_FILE_PATH=./logs/app.log
+VITE_NODE_ENV=production
+VITE_LOG_LEVEL=info
+VITE_LOG_FILE_ENABLED=true
+VITE_LOG_FILE_PATH=./logs/app.log
 ```
 
 ### Development Environment (.env.development)
 
-For development, create `.env.development`:
+Optional configuration for development mode:
 
 ```ini
-NODE_ENV=development
-LOG_LEVEL=debug
-LOG_FILE_ENABLED=false
+VITE_NODE_ENV=development
+VITE_LOG_LEVEL=debug
+VITE_LOG_FILE_ENABLED=false
 ```
 
 ### Environment Variables
 
-- `NODE_ENV`: Environment mode (`production` or `development`)
-- `LOG_LEVEL`: Logging level (`debug`, `info`, `warn`, `error`)
-- `LOG_FILE_ENABLED`: Enable file logging (`true` or `false`)
-- `LOG_FILE_PATH`: Log file path
+All environment variables must use the `VITE_` prefix to be accessible in the app:
+
+- `VITE_NODE_ENV`: Environment mode (`production` or `development`)
+- `VITE_LOG_LEVEL`: Logging level (`debug`, `info`, `warn`, `error`)
+- `VITE_LOG_FILE_ENABLED`: Enable file logging (`true` or `false`)
+- `VITE_LOG_FILE_PATH`: Log file path (only used when file logging is enabled)
+
+**Note**: If `.env.production` is missing during build, the app will use hardcoded defaults. The built application does not require any `.env` files to run.
 
 ## Related Documentation
 
