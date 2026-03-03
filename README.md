@@ -143,6 +143,10 @@ Application data is stored locally:
 
 Export your accounts as JSON and import them into other tools or share with team members.
 
+### Automated Account Creation
+
+For automated account registration, check out [Trae-Account-Creator](https://github.com/911218sky/Trae-Account-Creator) - a companion tool that automates the Trae IDE account creation process.
+
 ## ⚠️ Disclaimer
 
 This project is for educational and research purposes only.
