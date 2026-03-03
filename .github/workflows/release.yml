@@ -78,6 +78,6 @@ jobs:
             ---
             
             **Full Changelog**: https://github.com/911218sky/Trae-Account-Manager/commits/v__VERSION__
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
