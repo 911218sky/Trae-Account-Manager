@@ -116,6 +116,13 @@ export class LoggerService implements ILoggerService {
    */
   private readLogLevelFromEnv(): 'debug' | 'info' | 'warn' | 'error' {
     try {
+      // Try Vite environment variable first (embedded in build)
+      const viteLogLevel = typeof import.meta !== 'undefined' && import.meta.env?.VITE_LOG_LEVEL;
+      if (viteLogLevel && ['debug', 'info', 'warn', 'error'].includes(viteLogLevel)) {
+        return viteLogLevel as 'debug' | 'info' | 'warn' | 'error';
+      }
+      
+      // Fallback to process.env
       const logLevel = typeof process !== 'undefined' && process.env?.LOG_LEVEL;
       if (logLevel && ['debug', 'info', 'warn', 'error'].includes(logLevel)) {
         return logLevel as 'debug' | 'info' | 'warn' | 'error';
@@ -135,6 +142,17 @@ export class LoggerService implements ILoggerService {
    */
   private readFileOutputFromEnv(): { enabled: boolean; path: string } | undefined {
     try {
+      // Try Vite environment variables first (embedded in build)
+      const viteEnabled = typeof import.meta !== 'undefined' && import.meta.env?.VITE_LOG_FILE_ENABLED === 'true';
+      const viteFilePath = typeof import.meta !== 'undefined' && import.meta.env?.VITE_LOG_FILE_PATH;
+      
+      if (viteEnabled && viteFilePath) {
+        if (this.isFilePathWritable(viteFilePath)) {
+          return { enabled: true, path: viteFilePath };
+        }
+      }
+      
+      // Fallback to process.env
       const enabled = typeof process !== 'undefined' && process.env?.LOG_FILE_ENABLED === 'true';
       const filePath = typeof process !== 'undefined' && process.env?.LOG_FILE_PATH;
       
