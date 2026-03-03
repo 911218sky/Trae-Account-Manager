@@ -635,125 +635,128 @@ impl AccountManager {
 
     /// Reads the currently logged-in account from Trae IDE configuration.
     pub async fn read_trae_ide_account(&mut self) -> Result<Option<Account>> {
-        #[cfg(target_os = "windows")]
-        let trae_data_path = {
-            let appdata = std::env::var("APPDATA")
-                .map_err(|_| anyhow!("Failed to get APPDATA environment variable"))?;
-            PathBuf::from(appdata).join("Trae")
-        };
-        
-        #[cfg(target_os = "macos")]
-        let trae_data_path = {
-            let home = std::env::var("HOME")
-                .map_err(|_| anyhow!("Failed to get HOME environment variable"))?;
-            PathBuf::from(home)
-                .join("Library")
-                .join("Application Support")
-                .join("Trae")
-        };
-        
         #[cfg(not(any(target_os = "windows", target_os = "macos")))]
-        let trae_data_path: PathBuf = {
+        {
             return Err(anyhow!("This feature is only supported on Windows and macOS"));
-        };
-
-        let storage_path = trae_data_path
-            .join("User")
-            .join("globalStorage")
-            .join("storage.json");
-
-        if !storage_path.exists() {
-            return Ok(None);
         }
 
-        let content = fs::read_to_string(&storage_path)
-            .map_err(|e| anyhow!("Failed to read Trae IDE config file: {}", e))?;
+        #[cfg(any(target_os = "windows", target_os = "macos"))]
+        {
+            #[cfg(target_os = "windows")]
+            let trae_data_path = {
+                let appdata = std::env::var("APPDATA")
+                    .map_err(|_| anyhow!("Failed to get APPDATA environment variable"))?;
+                PathBuf::from(appdata).join("Trae")
+            };
+            
+            #[cfg(target_os = "macos")]
+            let trae_data_path = {
+                let home = std::env::var("HOME")
+                    .map_err(|_| anyhow!("Failed to get HOME environment variable"))?;
+                PathBuf::from(home)
+                    .join("Library")
+                    .join("Application Support")
+                    .join("Trae")
+            };
 
-        let storage: serde_json::Value = serde_json::from_str(&content)
-            .map_err(|e| anyhow!("Failed to parse Trae IDE config file: {}", e))?;
+            let storage_path = trae_data_path
+                .join("User")
+                .join("globalStorage")
+                .join("storage.json");
 
-        let auth_info_str = storage
-            .get("iCubeAuthInfo://icube.cloudide")
-            .and_then(|v| v.as_str())
-            .ok_or_else(|| anyhow!("Trae IDE login info not found"))?;
+            if !storage_path.exists() {
+                return Ok(None);
+            }
 
-        let auth_info: serde_json::Value = serde_json::from_str(auth_info_str)
-            .map_err(|e| anyhow!("Failed to parse Trae IDE auth info: {}", e))?;
+            let content = fs::read_to_string(&storage_path)
+                .map_err(|e| anyhow!("Failed to read Trae IDE config file: {}", e))?;
 
-        let token = auth_info
-            .get("token")
-            .and_then(|v| v.as_str())
-            .ok_or_else(|| anyhow!("Token not found"))?
-            .to_string();
+            let storage: serde_json::Value = serde_json::from_str(&content)
+                .map_err(|e| anyhow!("Failed to parse Trae IDE config file: {}", e))?;
 
-        let user_id = auth_info
-            .get("userId")
-            .and_then(|v| v.as_str())
-            .ok_or_else(|| anyhow!("User ID not found"))?
-            .to_string();
+            let auth_info_str = storage
+                .get("iCubeAuthInfo://icube.cloudide")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| anyhow!("Trae IDE login info not found"))?;
 
-        let email = auth_info
-            .get("account")
-            .and_then(|acc| acc.get("email"))
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
+            let auth_info: serde_json::Value = serde_json::from_str(auth_info_str)
+                .map_err(|e| anyhow!("Failed to parse Trae IDE auth info: {}", e))?;
 
-        let avatar_url = auth_info
-            .get("account")
-            .and_then(|acc| acc.get("avatar_url"))
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
+            let token = auth_info
+                .get("token")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| anyhow!("Token not found"))?
+                .to_string();
 
-        let username = auth_info
-            .get("account")
-            .and_then(|acc| acc.get("username"))
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
+            let user_id = auth_info
+                .get("userId")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| anyhow!("User ID not found"))?
+                .to_string();
 
-        if self.store.accounts.iter().any(|a| a.user_id == user_id) {
-            log::info!("Trae IDE account already exists in account manager");
-            return Ok(None);
-        }
+            let email = auth_info
+                .get("account")
+                .and_then(|acc| acc.get("email"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
 
-        let client = TraeApiClient::new_with_token(&token)?;
-        let user_info = client.get_user_info_by_token().await?;
+            let avatar_url = auth_info
+                .get("account")
+                .and_then(|acc| acc.get("avatar_url"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
 
-        let mut account = Account::new(
-            if username.is_empty() {
-                user_info.screen_name.unwrap_or_else(|| format!("User_{}", &user_id[..8.min(user_id.len())]))
+            let username = auth_info
+                .get("account")
+                .and_then(|acc| acc.get("username"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+
+            if self.store.accounts.iter().any(|a| a.user_id == user_id) {
+                log::info!("Trae IDE account already exists in account manager");
+                return Ok(None);
+            }
+
+            let client = TraeApiClient::new_with_token(&token)?;
+            let user_info = client.get_user_info_by_token().await?;
+
+            let mut account = Account::new(
+                if username.is_empty() {
+                    user_info.screen_name.unwrap_or_else(|| format!("User_{}", &user_id[..8.min(user_id.len())]))
+                } else {
+                    username
+                },
+                if email.is_empty() {
+                    user_info.email.unwrap_or_default()
+                } else {
+                    email
+                },
+                String::new(),
+                user_id,
+                user_info.tenant_id,
+            );
+
+            account.avatar_url = if avatar_url.is_empty() {
+                user_info.avatar_url.unwrap_or_default()
             } else {
-                username
-            },
-            if email.is_empty() {
-                user_info.email.unwrap_or_default()
-            } else {
-                email
-            },
-            String::new(),
-            user_id,
-            user_info.tenant_id,
-        );
+                avatar_url
+            };
+            account.jwt_token = Some(token);
 
-        account.avatar_url = if avatar_url.is_empty() {
-            user_info.avatar_url.unwrap_or_default()
-        } else {
-            avatar_url
-        };
-        account.jwt_token = Some(token);
+            self.store.accounts.push(account.clone());
 
-        self.store.accounts.push(account.clone());
+            if self.store.active_account_id.is_none() {
+                self.store.active_account_id = Some(account.id.clone());
+            }
 
-        if self.store.active_account_id.is_none() {
-            self.store.active_account_id = Some(account.id.clone());
+            self.save_store()?;
+
+            println!("[INFO] Successfully read and added account from Trae IDE: {}", account.email);
+            Ok(Some(account))
         }
-
-        self.save_store()?;
-
-        println!("[INFO] Successfully read and added account from Trae IDE: {}", account.email);
-        Ok(Some(account))
     }
 
     /// Checks if the account token is expiring soon (< 1 hour) or already expired.

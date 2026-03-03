@@ -55,16 +55,7 @@ pub mod linux_impl {
             let label = format!("{} - {}", SERVICE_NAME, account_id);
             let attributes = build_attributes(account_id);
 
-            // Delete existing item if it exists
-            let search_items = collection
-                .search_items(attributes.clone()).await
-                .context("Failed to search for existing items")?;
-            
-            for item in search_items {
-                item.delete().await.context("Failed to delete existing item")?;
-            }
-
-            // Create new item
+            // Create new item (replace=true will replace existing items with same attributes)
             collection
                 .create_item(
                     &label,
@@ -86,15 +77,21 @@ pub mod linux_impl {
             let collection = get_collection().await?;
             let attributes = build_attributes(account_id);
 
-            let search_items = collection
+            let search_result = collection
                 .search_items(attributes).await
                 .context("Failed to search for credential")?;
 
-            if search_items.is_empty() {
+            // Try unlocked items first
+            let item = if let Some(item) = search_result.unlocked.first() {
+                item
+            } else if let Some(item) = search_result.locked.first() {
+                // Unlock if necessary
+                item.unlock().await.context("Failed to unlock item")?;
+                item
+            } else {
                 return Err(anyhow::anyhow!("Credential not found for account: {}", account_id));
-            }
+            };
 
-            let item = &search_items[0];
             let secret = item.get_secret().await.context("Failed to get secret")?;
             let credential_json = String::from_utf8(secret)
                 .context("Failed to decode credential data")?;
@@ -113,11 +110,12 @@ pub mod linux_impl {
             let collection = get_collection().await?;
             let attributes = build_attributes(account_id);
 
-            let search_items = collection
+            let search_result = collection
                 .search_items(attributes).await
                 .context("Failed to search for credential")?;
 
-            for item in search_items {
+            // Delete all matching items (both unlocked and locked)
+            for item in search_result.unlocked.iter().chain(search_result.locked.iter()) {
                 item.delete().await.context("Failed to delete item")?;
             }
 
@@ -134,12 +132,14 @@ pub mod linux_impl {
             let mut service_attr = HashMap::new();
             service_attr.insert("service", SERVICE_NAME);
 
-            let search_items = collection
+            let search_result = collection
                 .search_items(service_attr).await
                 .context("Failed to search for credentials")?;
 
             let mut account_ids = Vec::new();
-            for item in search_items {
+            
+            // Process both unlocked and locked items
+            for item in search_result.unlocked.iter().chain(search_result.locked.iter()) {
                 let attributes = item.get_attributes().await.context("Failed to get attributes")?;
                 if let Some(account_id) = attributes.get("account") {
                     account_ids.push(account_id.to_string());
