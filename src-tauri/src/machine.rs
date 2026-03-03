@@ -2,6 +2,7 @@ use anyhow::{anyhow, Result};
 use uuid::Uuid;
 use std::fs;
 use std::path::PathBuf;
+#[cfg(target_os = "windows")]
 use std::process::Command;
 
 #[cfg(target_os = "windows")]

@@ -4,7 +4,7 @@
 pub mod linux_impl {
     use anyhow::{Context, Result};
     use super::super::types::Credential;
-    use secret_service::{SecretService, EncryptionType, Collection};
+    use secret_service::{SecretService, EncryptionType};
     use std::collections::HashMap;
     use tokio::runtime::Runtime;
 
@@ -13,23 +13,6 @@ pub mod linux_impl {
     /// Get or create a tokio runtime for async operations
     fn get_runtime() -> Result<Runtime> {
         Runtime::new().context("Failed to create tokio runtime")
-    }
-
-    /// Get the default collection from Secret Service
-    async fn get_collection() -> Result<Collection<'static>> {
-        let service = SecretService::connect(EncryptionType::Dh).await
-            .context("Failed to connect to Secret Service")?;
-        
-        let collection = service
-            .get_default_collection().await
-            .context("Failed to get default collection")?;
-
-        // Unlock the collection if it's locked
-        if collection.is_locked().await.context("Failed to check lock status")? {
-            collection.unlock().await.context("Failed to unlock collection")?;
-        }
-
-        Ok(collection)
     }
 
     /// Build attributes for the credential
@@ -44,7 +27,18 @@ pub mod linux_impl {
     pub fn store_credential(account_id: &str, credential: &Credential) -> Result<()> {
         let rt = get_runtime()?;
         rt.block_on(async {
-            let collection = get_collection().await?;
+            let service = SecretService::connect(EncryptionType::Dh)
+                .await
+                .context("Failed to connect to Secret Service")?;
+
+            let collection = service
+                .get_default_collection()
+                .await
+                .context("Failed to get default collection")?;
+
+            if collection.is_locked().await.context("Failed to check lock status")? {
+                collection.unlock().await.context("Failed to unlock collection")?;
+            }
 
             // Serialize credential to JSON
             let credential_json = serde_json::to_string(credential)
@@ -74,10 +68,21 @@ pub mod linux_impl {
     pub fn get_credential(account_id: &str) -> Result<Credential> {
         let rt = get_runtime()?;
         rt.block_on(async {
-            let collection = get_collection().await?;
+            let service = SecretService::connect(EncryptionType::Dh)
+                .await
+                .context("Failed to connect to Secret Service")?;
+
+            let collection = service
+                .get_default_collection()
+                .await
+                .context("Failed to get default collection")?;
+
+            if collection.is_locked().await.context("Failed to check lock status")? {
+                collection.unlock().await.context("Failed to unlock collection")?;
+            }
             let attributes = build_attributes(account_id);
 
-            let search_result = collection
+            let search_result = service
                 .search_items(attributes).await
                 .context("Failed to search for credential")?;
 
@@ -107,10 +112,21 @@ pub mod linux_impl {
     pub fn delete_credential(account_id: &str) -> Result<()> {
         let rt = get_runtime()?;
         rt.block_on(async {
-            let collection = get_collection().await?;
+            let service = SecretService::connect(EncryptionType::Dh)
+                .await
+                .context("Failed to connect to Secret Service")?;
+
+            let collection = service
+                .get_default_collection()
+                .await
+                .context("Failed to get default collection")?;
+
+            if collection.is_locked().await.context("Failed to check lock status")? {
+                collection.unlock().await.context("Failed to unlock collection")?;
+            }
             let attributes = build_attributes(account_id);
 
-            let search_result = collection
+            let search_result = service
                 .search_items(attributes).await
                 .context("Failed to search for credential")?;
 
@@ -127,12 +143,23 @@ pub mod linux_impl {
     pub fn list_credentials() -> Result<Vec<String>> {
         let rt = get_runtime()?;
         rt.block_on(async {
-            let collection = get_collection().await?;
+            let service = SecretService::connect(EncryptionType::Dh)
+                .await
+                .context("Failed to connect to Secret Service")?;
+
+            let collection = service
+                .get_default_collection()
+                .await
+                .context("Failed to get default collection")?;
+
+            if collection.is_locked().await.context("Failed to check lock status")? {
+                collection.unlock().await.context("Failed to unlock collection")?;
+            }
             
             let mut service_attr = HashMap::new();
             service_attr.insert("service", SERVICE_NAME);
 
-            let search_result = collection
+            let search_result = service
                 .search_items(service_attr).await
                 .context("Failed to search for credentials")?;
 
