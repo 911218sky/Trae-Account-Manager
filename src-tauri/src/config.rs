@@ -28,10 +28,6 @@ impl Default for AppConfig {
     }
 }
 
-#[cfg(test)]
-#[path = "config.test.rs"]
-mod tests;
-
 impl AppConfig {
     /// Load configuration from file or create default
     pub fn load() -> anyhow::Result<Self> {

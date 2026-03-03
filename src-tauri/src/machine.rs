@@ -153,6 +153,9 @@ pub fn is_trae_running() -> bool {
 pub fn is_trae_running() -> bool {
     false
 }
+
+/// Terminates the Trae IDE process.
+#[cfg(target_os = "windows")]
 pub fn kill_trae() -> Result<()> {
     if !is_trae_running() {
         log::info!("Trae IDE is not running");
