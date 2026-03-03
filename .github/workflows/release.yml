@@ -11,10 +11,11 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: write
+
 jobs:
   release:
-    permissions:
-      contents: write
     strategy:
       fail-fast: false
       matrix:
@@ -53,9 +54,9 @@ jobs:
 
       - uses: tauri-apps/tauri-action@v0
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TAURI_RELEASE_TOKEN != '' && secrets.TAURI_RELEASE_TOKEN || github.token }}
         with:
-          tagName: ${{ github.event.inputs.tag || github.ref_name }}
+          tagName: ${{ startsWith(github.event.inputs.tag || github.ref_name, 'v') && (github.event.inputs.tag || github.ref_name) || format('v{0}', github.event.inputs.tag || github.ref_name) }}
           releaseName: 'Trae Auto v__VERSION__'
           releaseBody: 'See the assets to download this version and install.'
           releaseDraft: true
