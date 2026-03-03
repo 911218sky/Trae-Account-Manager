@@ -96,10 +96,16 @@ export class LoggerService implements ILoggerService {
     try {
       // Try to read NODE_ENV from process.env
       const nodeEnv = typeof process !== 'undefined' && process.env?.NODE_ENV;
+      
+      // In production build (when import.meta.env.PROD is true), always use production
+      if (typeof import.meta !== 'undefined' && import.meta.env?.PROD) {
+        return 'production';
+      }
+      
       return nodeEnv === 'production' ? 'production' : 'development';
     } catch {
-      // Fallback to development if process is not available
-      return 'development';
+      // Fallback to production for safety in built applications
+      return 'production';
     }
   }
 
