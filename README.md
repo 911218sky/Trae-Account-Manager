@@ -39,13 +39,13 @@ This project is based on [Yang-505/Trae-Account-Manager](https://github.com/Yang
 
 ### Installation
 
-Download the latest release for your platform from [Releases](https://github.com/YOUR_USERNAME/Trae-Account-Manager/releases).
+Download the latest release for your platform from [Releases](https://github.com/911218sky/Trae-Account-Manager/releases).
 
 ### Build from Source
 
 ```bash
 # Clone repository
-git clone https://github.com/YOUR_USERNAME/Trae-Account-Manager.git
+git clone https://github.com/911218sky/Trae-Account-Manager.git
 cd Trae-Account-Manager
 
 # Install dependencies
