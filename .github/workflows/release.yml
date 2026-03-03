@@ -58,7 +58,26 @@ jobs:
         with:
           tagName: ${{ startsWith(github.event.inputs.tag || github.ref_name, 'v') && (github.event.inputs.tag || github.ref_name) || format('v{0}', github.event.inputs.tag || github.ref_name) }}
           releaseName: 'Trae Auto v__VERSION__'
-          releaseBody: 'See the assets to download this version and install.'
+          releaseBody: |
+            ## 🚀 What's New in v__VERSION__
+            
+            ### 📦 Installation
+            Download the appropriate installer for your platform below.
+            
+            ### 🔗 Related Tools
+            - **Automated Account Creation**: [Trae-Account-Creator](https://github.com/911218sky/Trae-Account-Creator) - Automate Trae IDE account registration
+            
+            ### 📋 Supported Platforms
+            - ✅ Windows 10/11 (x64)
+            - ✅ macOS (Intel & Apple Silicon)
+            - ✅ Linux (x64)
+            
+            ### 📖 Documentation
+            For usage instructions, visit the [README](https://github.com/911218sky/Trae-Account-Manager#readme)
+            
+            ---
+            
+            **Full Changelog**: https://github.com/911218sky/Trae-Account-Manager/commits/v__VERSION__
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
