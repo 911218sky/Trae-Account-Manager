@@ -434,7 +434,7 @@ pub fn open_trae() -> Result<()> {
         return Err(anyhow!("Trae IDE path is invalid, please reconfigure it in settings"));
     }
 
-    println!("[INFO] Starting Trae IDE: {}", trae_exe.display());
+    log::info!("Starting Trae IDE: {}", trae_exe.display());
 
     Command::new(&trae_exe)
         .spawn()
@@ -461,7 +461,7 @@ pub fn open_trae() -> Result<()> {
         return Err(anyhow!("Trae IDE path is invalid, please reconfigure it in settings"));
     }
 
-    println!("[INFO] Starting Trae IDE: {}", trae_app.display());
+    log::info!("Starting Trae IDE: {}", trae_app.display());
 
     Command::new("open")
         .arg("-a")
@@ -494,7 +494,7 @@ pub fn open_trae() -> Result<()> {
         return Err(anyhow!("Trae IDE path is invalid, please reconfigure it in settings"));
     }
 
-    println!("[INFO] Starting Trae IDE: {}", trae_exe.display());
+    log::info!("Starting Trae IDE: {}", trae_exe.display());
 
     Command::new(&trae_exe)
         .spawn()

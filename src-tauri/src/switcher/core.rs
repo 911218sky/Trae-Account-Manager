@@ -155,10 +155,9 @@ impl AccountSwitcher {
 
         // Update secure storage with credentials (non-blocking, log warning on failure).
         if let Err(e) = self.update_secure_storage(&account).await {
-            println!("[WARN] Secure storage update failed (does not affect switch): {}", e);
             log::warn!("Failed to update secure storage (non-critical): {}", e);
         } else {
-            println!("[INFO] Secure storage updated successfully");
+            log::info!("Secure storage updated successfully");
         }
 
         // Update state.

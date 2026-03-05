@@ -234,7 +234,7 @@ impl AccountManager {
         self.store.current_account_id = Some(account_id.to_string());
         self.save_store()?;
 
-        println!("[INFO] Switched to account: {}", account.email);
+        log::info!("Switched to account: {}", account.email);
         Ok(())
     }
 
@@ -251,7 +251,7 @@ impl AccountManager {
         let email = account.email.clone();
 
         self.save_store()?;
-        println!("[INFO] Machine ID {} bound to account {}", current_machine_id, email);
+        log::info!("Machine ID {} bound to account {}", current_machine_id, email);
 
         Ok(current_machine_id)
     }
@@ -605,7 +605,7 @@ impl AccountManager {
                 Err(e) => {
                     let error_msg = e.to_string();
                     if error_msg.contains("401") && !account.cookies.is_empty() {
-                        println!("[INFO] Token expired, attempting to refresh using cookies...");
+                        log::info!("Token expired, attempting to refresh using cookies...");
                         let mut cookie_client = TraeApiClient::new(&account.cookies)?;
                         let token_result = cookie_client.get_user_token().await?;
 
@@ -754,7 +754,7 @@ impl AccountManager {
 
             self.save_store()?;
 
-            println!("[INFO] Successfully read and added account from Trae IDE: {}", account.email);
+            log::info!("Successfully read and added account from Trae IDE: {}", account.email);
             Ok(Some(account))
         }
     }
@@ -825,7 +825,7 @@ impl AccountManager {
 
         client.claim_birthday_bonus().await?;
 
-        println!("[INFO] Successfully claimed birthday bonus: {}", account.email);
+        log::info!("Successfully claimed birthday bonus: {}", account.email);
         Ok(())
     }
 

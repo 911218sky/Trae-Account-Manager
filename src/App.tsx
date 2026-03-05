@@ -491,7 +491,7 @@ function App() {
     try {
       addToast("info", "Re-logging in...");
       await api.reloginAccount(accountId);
-      addToast("success", "Re-login successful, please restart Trae IDE");
+      addToast("success", "Re-login successful, Trae IDE refreshed");
     } catch (err: any) {
       addToast("error", err.message || "Re-login failed");
     }

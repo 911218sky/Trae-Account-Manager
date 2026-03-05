@@ -342,12 +342,12 @@ async fn relogin_account(account_id: String, state: State<'_, AppState>) -> Resu
                 region: if account.region.is_empty() { "SG".to_string() } else { account.region.clone() },
             };
             
-            crate::machine::write_trae_login_info(&login_info)
+            crate::machine::switch_trae_account(&login_info, account.machine_id.as_deref())
                 .map_err(|e| ApiError {
-                    message: format!("Failed to rewrite to IDE: {}", e),
+                    message: format!("Failed to refresh IDE login state: {}", e),
                 })?;
             
-            log::info!("Re-logged in to account and wrote to IDE: {}", account.email);
+            log::info!("Re-logged in to account and refreshed IDE login state: {}", account.email);
         }
     }
     

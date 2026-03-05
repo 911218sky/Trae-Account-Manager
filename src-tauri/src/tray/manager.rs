@@ -48,14 +48,14 @@ impl SystemTrayManager {
                     "refresh" => {
                         // Emit refresh event to frontend.
                         if let Err(e) = app.emit("refresh-accounts", ()) {
-                            eprintln!("Failed to emit refresh event: {}", e);
+                            log::error!("Failed to emit refresh event: {}", e);
                         }
                     }
                     id if id.starts_with("account_") => {
                         // Extract account ID and emit switch event.
                         let account_id = id.strip_prefix("account_").unwrap_or("");
                         if let Err(e) = app.emit("switch-account", account_id) {
-                            eprintln!("Failed to emit switch event: {}", e);
+                            log::error!("Failed to emit switch event: {}", e);
                         }
                     }
                     _ => {}
@@ -230,7 +230,7 @@ impl SystemTrayManager {
         });
         
         if let Err(e) = self.app_handle.emit("switch-progress", progress) {
-            eprintln!("Failed to emit progress event: {}", e);
+            log::warn!("Failed to emit progress event: {}", e);
         }
     }
 
@@ -238,7 +238,7 @@ impl SystemTrayManager {
     pub fn show_success(&self, message: &str) {
         // Emit success event to frontend.
         if let Err(e) = self.app_handle.emit("switch-success", message) {
-            eprintln!("Failed to emit success event: {}", e);
+            log::warn!("Failed to emit success event: {}", e);
         }
     }
 
@@ -246,7 +246,7 @@ impl SystemTrayManager {
     pub fn show_error(&self, message: &str) {
         // Emit error event to frontend.
         if let Err(e) = self.app_handle.emit("switch-error", message) {
-            eprintln!("Failed to emit error event: {}", e);
+            log::warn!("Failed to emit error event: {}", e);
         }
     }
 }

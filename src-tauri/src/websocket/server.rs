@@ -97,7 +97,7 @@ impl WebSocketServer {
                 for (client_id, conn) in connections.iter() {
                     // Check if connection is stale (no heartbeat response for 30s)
                     if now.duration_since(conn.last_heartbeat) > timeout {
-                        println!("[WARN] Client {} timed out, removing connection", client_id);
+                        log::warn!("Client {} timed out, removing connection", client_id);
                         to_remove.push(client_id.clone());
                         continue;
                     }
@@ -109,7 +109,7 @@ impl WebSocketServer {
                     
                     if let Ok(message) = serde_json::to_string(&heartbeat) {
                         if let Err(e) = conn.sender.send(Message::Text(message)) {
-                            println!("[WARN] Failed to send heartbeat to {}: {}", client_id, e);
+                            log::warn!("Failed to send heartbeat to {}: {}", client_id, e);
                             to_remove.push(client_id.clone());
                         }
                     }
@@ -118,7 +118,7 @@ impl WebSocketServer {
                 // Remove stale connections
                 for client_id in to_remove {
                     connections.remove(&client_id);
-                    println!("[INFO] Removed stale connection: {}", client_id);
+                    log::info!("Removed stale connection: {}", client_id);
                 }
             }
         });
