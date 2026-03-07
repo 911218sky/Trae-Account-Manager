@@ -1,4 +1,4 @@
-import { BarChart3, Users, Settings, Info } from "lucide-react";
+import { BarChart3, Users, Settings } from "lucide-react";
 import logoImage from "../assets/logo.png";
 
 interface SidebarProps {
@@ -10,7 +10,6 @@ const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: BarChart3 },
   { id: "accounts", label: "Account Management", icon: Users },
   { id: "settings", label: "Settings", icon: Settings },
-  { id: "about", label: "About", icon: Info },
 ];
 
 export function Sidebar({ currentPage, onNavigate }: SidebarProps) {

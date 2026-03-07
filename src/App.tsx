@@ -16,7 +16,6 @@ import { SwitchProgress, SwitchProgressData } from "./components/SwitchProgress"
 import { SwitchErrorModal } from "./components/SwitchErrorModal";
 import { Dashboard } from "./pages/Dashboard";
 import { Settings } from "./pages/Settings";
-import { About } from "./pages/About";
 import { useToast } from "./hooks/useToast";
 import { useAuth } from "./contexts/AuthContext";
 import { getWebSocketClient } from "./services/websocketClient";
@@ -1322,18 +1321,6 @@ function App() {
               </div>
             </header>
             <Settings onToast={addToast} />
-          </>
-        )}
-
-        {currentPage === "about" && (
-          <>
-            <header className="page-header">
-              <div className="header-left">
-                <h2 className="page-title">About</h2>
-                <p>Application information</p>
-              </div>
-            </header>
-            <About />
           </>
         )}
       </div>
