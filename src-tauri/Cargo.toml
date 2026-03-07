@@ -1,6 +1,6 @@
 [package]
 name = "trae-auto"
-version = "0.1.5"
+version = "0.1.6"
 description = "Trae Account Manager - Manage Trae subscription accounts and usage"
 authors = ["sauce"]
 edition = "2021"

@@ -1,5 +1,7 @@
 # AI Development Guidelines
 
+> 💡 **For AI**: Start with `.kiro/steering/project-overview.md` for quick context. Reference this file only when you need detailed information.
+
 This project uses AI-assisted development. Below are the configurations and guidelines.
 
 ## Project Structure

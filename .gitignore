@@ -45,7 +45,8 @@ src/App.css.backup
 
 # AI Tools
 .claude/
-.kiro/
+.kiro/*
+!.kiro/steering/
 
 # Environment variables
 .env
